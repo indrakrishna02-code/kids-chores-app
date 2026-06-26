@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Achu Pinky Chores">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Achu Pinky Chore Tracker</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --bg: #f7f3ff;
+    --card-shadow: 0 4px 16px rgba(0,0,0,0.10);
+    --radius: 18px;
+    --radius-sm: 10px;
+    /* Achu = kid 0 = purple/teal */
+    --achu-a: #6c63ff; --achu-b: #43e8d8;
+    /* Pinky = kid 1 = pink/orange */
+    --pinky-a: #ff6b9d; --pinky-b: #ff9a3c;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── HEADER ── */
+  .app-header {
+    background: linear-gradient(135deg, #6c63ff 0%, #ff6b9d 100%);
+    padding: 16px 16px 12px;
+    text-align: center;
+    box-shadow: 0 3px 14px rgba(108,99,255,0.25);
+    position: sticky; top: 0; z-index: 100;
+  }
+  .app-title {
+    font-size: 1.25rem; font-weight: 900; color: #fff;
+    letter-spacing: 0.5px; text-shadow: 0 2px 6px rgba(0,0,0,0.18);
+  }
+
+  /* ── TOP NAV TABS ── */
+  .nav-tabs {
+    display: flex; background: #fff;
+    border-bottom: 3px solid #ede8ff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    position: sticky; top: 56px; z-index: 99;
+    overflow-x: auto;
+  }
+  .nav-tab {
+    flex: 1; padding: 11px 4px 9px; text-align: center;
+    font-size: 0.82rem; font-weight: 700; color: #aaa;
+    border: none; background: none; cursor: pointer;
+    border-bottom: 3px solid transparent; margin-bottom: -3px;
+    transition: all 0.2s; white-space: nowrap; min-width: 70px;
+  }
+  .nav-tab.achu-tab.active  { color: #6c63ff; border-bottom-color: #6c63ff; }
+  .nav-tab.pinky-tab.active { color: #ff6b9d; border-bottom-color: #ff6b9d; }
+  .nav-tab.settings-tab.active { color: #43b89c; border-bottom-color: #43b89c; }
+
+  .nav-tab .tab-emoji { display: block; font-size: 1.2rem; margin-bottom: 1px; }
+
+  /* ── PAGES ── */
+  .page { display: none; padding: 14px 13px 90px; }
+  .page.active { display: block; }
+
+  /* ── POINTS BANNER ── */
+  .points-banner {
+    border-radius: var(--radius); padding: 16px 18px 14px;
+    margin-bottom: 14px; color: #fff;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: var(--card-shadow);
+  }
+  .achu-page  .points-banner { background: linear-gradient(135deg, var(--achu-a),  var(--achu-b));  }
+  .pinky-page .points-banner { background: linear-gradient(135deg, var(--pinky-a), var(--pinky-b)); }
+
+  .banner-left { flex: 1; }
+  .points-label { font-size: 0.72rem; font-weight: 700; opacity: 0.82; text-transform: uppercase; letter-spacing: 0.5px; }
+  .points-value { font-size: 2.8rem; font-weight: 900; line-height: 1.05; }
+  .points-unit  { font-size: 0.9rem;  font-weight: 700; opacity: 0.8; margin-left: 4px; }
+  .banner-today { display: flex; align-items: baseline; gap: 4px; margin: 2px 0 10px; }
+  .banner-divider { height: 1px; background: rgba(255,255,255,0.3); margin-bottom: 10px; }
+  .alltime-label { font-size: 0.72rem; font-weight: 700; opacity: 0.78; text-transform: uppercase; letter-spacing: 0.4px; }
+  .alltime-row   { display: flex; align-items: baseline; gap: 4px; margin-top: 2px; }
+  .alltime-value { font-size: 1.5rem; font-weight: 900; line-height: 1; }
+  .alltime-unit  { font-size: 0.78rem; font-weight: 700; opacity: 0.75; }
+  .banner-since  { font-size: 0.65rem; opacity: 0.6; margin-top: 5px; font-weight: 600; }
+  .banner-emoji  { font-size: 2.6rem; flex-shrink: 0; margin-left: 10px; }
+
+  /* ── WEEKLY CALENDAR ── */
+  .week-card {
+    background: #fff; border-radius: var(--radius); padding: 14px 12px 12px;
+    margin-bottom: 14px; box-shadow: var(--card-shadow);
+  }
+  .week-title {
+    font-size: 0.72rem; font-weight: 800; letter-spacing: 1px;
+    text-transform: uppercase; color: #ccc; margin-bottom: 10px; padding-left: 2px;
+  }
+  .week-row {
+    display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;
+  }
+  .week-day {
+    display: flex; flex-direction: column; align-items: center;
+    border-radius: 10px; padding: 7px 2px 8px; gap: 3px;
+    background: #f7f3ff;
+  }
+  .week-day.today {
+    color: #fff;
+  }
+  .week-day.has-pts {
+    background: #f0eeff;
+  }
+  .achu-page  .week-day.today { background: linear-gradient(135deg, #6c63ff, #43e8d8); }
+  .pinky-page .week-day.today { background: linear-gradient(135deg, #ff6b9d, #ff9a3c); }
+  .wd-name {
+    font-size: 0.65rem; font-weight: 800; text-transform: uppercase;
+    letter-spacing: 0.5px; color: #bbb;
+  }
+  .week-day.today .wd-name { color: rgba(255,255,255,0.85); }
+  .wd-date {
+    font-size: 0.88rem; font-weight: 900; color: #555; line-height: 1;
+  }
+  .week-day.today .wd-date { color: #fff; }
+  .wd-pts {
+    font-size: 0.7rem; font-weight: 800; color: #aaa;
+    background: rgba(0,0,0,0.05); border-radius: 20px;
+    padding: 1px 6px; min-width: 24px; text-align: center;
+  }
+  .week-day.today .wd-pts { background: rgba(255,255,255,0.25); color: #fff; }
+  .week-day.has-pts .wd-pts { color: #6c63ff; }
+  .pinky-page .week-day.has-pts .wd-pts { color: #ff6b9d; }
+  .week-day.today .wd-pts { color: #fff !important; }
+
+  /* auto-reset notice */
+  .auto-reset-note {
+    background: #fff; border-radius: var(--radius-sm);
+    padding: 8px 14px; margin-bottom: 12px;
+    font-size: 0.75rem; color: #aaa; font-weight: 600;
+    display: flex; align-items: center; gap: 6px;
+    box-shadow: var(--card-shadow);
+  }
+
+  /* ── MANUAL ADJUST ── */
+  .adjust-row {
+    display: flex; gap: 8px; align-items: center;
+    background: #fff; border-radius: var(--radius-sm);
+    padding: 9px 13px; margin-bottom: 14px;
+    box-shadow: var(--card-shadow);
+  }
+  .adjust-row label { font-size: 0.78rem; font-weight: 700; color: #888; white-space: nowrap; }
+  .adjust-input {
+    flex: 1; border: 2px solid #ede8ff; border-radius: 8px;
+    padding: 7px 10px; font-size: 1rem; font-weight: 700; color: #444;
+    outline: none; text-align: center;
+  }
+  .adjust-input:focus { border-color: #6c63ff; }
+  .adjust-btn {
+    padding: 8px 14px; border-radius: 8px; border: none;
+    font-weight: 800; font-size: 0.88rem; cursor: pointer; color: #fff;
+    transition: transform 0.1s;
+  }
+  .adjust-btn:active { transform: scale(0.96); }
+  .achu-page  .adjust-btn { background: linear-gradient(135deg, var(--achu-a),  var(--achu-b));  }
+  .pinky-page .adjust-btn { background: linear-gradient(135deg, var(--pinky-a), var(--pinky-b)); }
+
+  /* ── SECTION LABEL ── */
+  .section-label {
+    font-size: 0.74rem; font-weight: 800; letter-spacing: 1px;
+    text-transform: uppercase; color: #bbb; margin: 14px 0 8px 4px;
+  }
+
+  /* ── CHORE CARDS ── */
+  .chore-grid { display: flex; flex-direction: column; gap: 9px; }
+  .chore-card {
+    background: #fff; border-radius: var(--radius-sm);
+    padding: 12px 14px; display: flex; align-items: center;
+    box-shadow: var(--card-shadow); transition: transform 0.15s;
+    border-left: 5px solid #eee; cursor: pointer;
+  }
+  .chore-card:active { transform: scale(0.98); }
+  .chore-card.done { opacity: 0.68; }
+  .chore-icon { font-size: 1.4rem; margin-right: 11px; flex-shrink: 0; }
+  .chore-info { flex: 1; }
+  .chore-name { font-size: 0.92rem; font-weight: 700; color: #333; }
+  .chore-pts  { font-size: 0.75rem; font-weight: 600; color: #aaa; margin-top: 1px; }
+  .chore-card.done .chore-name { text-decoration: line-through; color: #bbb; }
+
+  /* Toggle */
+  .toggle-wrap { position: relative; width: 46px; height: 26px; flex-shrink: 0; }
+  .toggle-wrap input { opacity: 0; width: 0; height: 0; position: absolute; }
+  .toggle-slider {
+    position: absolute; inset: 0; border-radius: 26px;
+    background: #ddd; transition: background 0.2s; cursor: pointer;
+  }
+  .toggle-slider::before {
+    content: ''; position: absolute; width: 20px; height: 20px;
+    border-radius: 50%; background: #fff; left: 3px; top: 3px;
+    transition: transform 0.2s; box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+  }
+  .toggle-wrap input:checked + .toggle-slider { background: #4cd964; }
+  .toggle-wrap input:checked + .toggle-slider::before { transform: translateX(20px); }
+
+  /* Card accent colors */
+  .cc0{border-left-color:#6c63ff} .cc1{border-left-color:#ff6b9d}
+  .cc2{border-left-color:#43e8d8} .cc3{border-left-color:#ff9a3c}
+  .cc4{border-left-color:#f7c948} .cc5{border-left-color:#5ee76a}
+  .cc6{border-left-color:#f06595} .cc7{border-left-color:#a78bfa}
+  .cc8{border-left-color:#38bdf8} .cc9{border-left-color:#fb7185}
+
+  /* ── PENALTY CARDS ── */
+  .penalty-card {
+    background: #fff5f5; border-radius: var(--radius-sm);
+    padding: 12px 14px; display: flex; align-items: center;
+    box-shadow: var(--card-shadow); border-left: 5px solid #ff4d6d;
+    gap: 10px; margin-bottom: 8px;
+  }
+  .penalty-name { font-size: 0.92rem; font-weight: 700; color: #c0392b; flex: 1; }
+  .penalty-pts  { font-size: 0.74rem; font-weight: 600; color: #e57373; }
+  .penalty-btn {
+    background: linear-gradient(135deg, #ff4d6d, #ff9a3c);
+    color: #fff; border: none; border-radius: 8px;
+    padding: 7px 13px; font-weight: 800; font-size: 0.82rem; cursor: pointer;
+    transition: transform 0.1s; white-space: nowrap;
+  }
+  .penalty-btn:active { transform: scale(0.95); }
+
+  /* ── RESET BUTTON ── */
+  .reset-day-btn {
+    width: 100%; margin-top: 18px; padding: 12px;
+    border-radius: var(--radius-sm); border: 2px dashed #ddd;
+    background: #fff; font-size: 0.88rem; font-weight: 700;
+    color: #999; cursor: pointer; transition: all 0.2s;
+  }
+  .reset-day-btn:hover { border-color: #bbb; color: #666; }
+
+  /* ── SETTINGS ── */
+  .settings-section { background: #fff; border-radius: var(--radius); padding: 16px; margin-bottom: 14px; box-shadow: var(--card-shadow); }
+  .settings-section h3 { font-size: 0.95rem; font-weight: 800; color: #555; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+  .settings-row { display: flex; gap: 8px; margin-bottom: 9px; align-items: center; }
+  .settings-input {
+    flex: 1; border: 2px solid #ede8ff; border-radius: 8px;
+    padding: 8px 11px; font-size: 0.9rem; color: #444; outline: none;
+  }
+  .settings-input:focus { border-color: #6c63ff; }
+  .settings-input.small { width: 65px; flex: none; text-align: center; }
+  .btn-save  { padding: 8px 14px; border-radius: 8px; border: none; background: linear-gradient(135deg,#6c63ff,#43e8d8); color:#fff; font-weight:800; cursor:pointer; font-size:0.86rem; white-space:nowrap; }
+  .btn-add   { padding: 8px 14px; border-radius: 8px; border: none; background: linear-gradient(135deg,#5ee76a,#43e8d8); color:#fff; font-weight:800; cursor:pointer; font-size:0.86rem; white-space:nowrap; }
+  .btn-danger{ padding: 8px 14px; border-radius: 8px; border: none; background: linear-gradient(135deg,#ff4d6d,#ff9a3c); color:#fff; font-weight:800; cursor:pointer; font-size:0.86rem; white-space:nowrap; }
+  .chore-edit-item { display:flex; gap:6px; align-items:center; padding:7px 0; border-bottom:1px solid #f0eeff; }
+  .chore-edit-item:last-child { border-bottom:none; }
+  .chore-edit-name { flex:1; font-size:0.85rem; font-weight:600; color:#444; }
+  .chore-edit-pts  { font-size:0.78rem; font-weight:700; color:#888; width:46px; text-align:right; }
+  .btn-icon { background:none; border:none; font-size:1rem; cursor:pointer; padding:3px 5px; border-radius:6px; }
+  .btn-icon:hover { background:#f0eeff; }
+  .penalty-edit-name { color:#c0392b; }
+
+
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    display:none; position:fixed; inset:0;
+    background:rgba(0,0,0,0.5); z-index:200;
+    align-items:center; justify-content:center; padding:20px;
+  }
+  .modal-overlay.open { display:flex; }
+  .modal-box { background:#fff; border-radius:var(--radius); padding:22px 18px; width:100%; max-width:380px; box-shadow:0 8px 40px rgba(0,0,0,0.22); }
+  .modal-box h3 { font-size:1rem; font-weight:800; color:#444; margin-bottom:12px; }
+  .modal-box p  { color:#777; font-size:0.88rem; line-height:1.5; margin-bottom:14px; }
+  .modal-box input { width:100%; border:2px solid #ede8ff; border-radius:8px; padding:9px 11px; font-size:0.92rem; outline:none; margin-bottom:9px; }
+  .modal-box input:focus { border-color:#6c63ff; }
+  .modal-row { display:flex; gap:10px; margin-top:4px; }
+  .modal-row button { flex:1; padding:10px; border-radius:8px; border:none; font-weight:800; font-size:0.88rem; cursor:pointer; }
+  .modal-cancel  { background:#f0eeff; color:#6c63ff; }
+  .modal-confirm { background:linear-gradient(135deg,#6c63ff,#43e8d8); color:#fff; }
+  .modal-danger  { background:linear-gradient(135deg,#ff4d6d,#ff9a3c); color:#fff; }
+
+  /* ── 500pt CELEBRATION ── */
+  .celebrate-overlay {
+    display:none; position:fixed; inset:0;
+    background:rgba(0,0,0,0.6); z-index:300;
+    align-items:center; justify-content:center; padding:20px;
+    flex-direction:column;
+  }
+  .celebrate-overlay.open { display:flex; }
+  .celebrate-box {
+    background:#fff; border-radius:24px; padding:30px 24px 24px;
+    text-align:center; width:100%; max-width:340px;
+    box-shadow:0 12px 50px rgba(0,0,0,0.3);
+    animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  @keyframes popIn { from{transform:scale(0.5);opacity:0} to{transform:scale(1);opacity:1} }
+  .celebrate-stars { font-size:2.8rem; letter-spacing:4px; margin-bottom:10px; }
+  .celebrate-name  { font-size:1.5rem; font-weight:900; margin-bottom:4px; }
+  .celebrate-msg   { font-size:1rem; font-weight:700; color:#888; margin-bottom:18px; line-height:1.4; }
+  .celebrate-pts   { font-size:3.5rem; font-weight:900; line-height:1; margin-bottom:6px; }
+  .celebrate-sub   { font-size:0.9rem; font-weight:700; color:#aaa; margin-bottom:22px; }
+  .celebrate-btn   { width:100%; padding:13px; border-radius:12px; border:none; font-size:1rem; font-weight:800; color:#fff; cursor:pointer; }
+  /* confetti */
+  .confetti-piece { position:fixed; width:10px; height:10px; top:-10px; border-radius:2px; animation:fall linear forwards; pointer-events:none; z-index:301; }
+  @keyframes fall { to{transform:translateY(110vh) rotate(720deg); opacity:0;} }
+
+  /* ── TOAST ── */
+  .toast {
+    position:fixed; bottom:26px; left:50%; transform:translateX(-50%) translateY(80px);
+    background:#333; color:#fff; padding:9px 20px; border-radius:30px;
+    font-size:0.85rem; font-weight:700; z-index:400;
+    transition:transform 0.3s ease; white-space:nowrap;
+    box-shadow:0 4px 20px rgba(0,0,0,0.2);
+  }
+  .toast.show { transform:translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="app-header">
+  <div class="app-title">⭐ Achu Pinky Chore Tracker ⭐</div>
+</div>
+
+<!-- NAV TABS -->
+<div class="nav-tabs">
+  <button class="nav-tab achu-tab active" onclick="showPage('achu')" id="tab-achu">
+    <span class="tab-emoji">🦄</span><span id="tab-achu-name">Achu</span>
+  </button>
+  <button class="nav-tab pinky-tab" onclick="showPage('pinky')" id="tab-pinky">
+    <span class="tab-emoji">🌸</span><span id="tab-pinky-name">Pinky</span>
+  </button>
+  <button class="nav-tab settings-tab" onclick="showPage('settings')" id="tab-settings">
+    <span class="tab-emoji">⚙️</span>Settings
+  </button>
+
+</div>
+
+<!-- ══ ACHU PAGE (kid 0, purple/teal) ══ -->
+<div class="page achu-page active" id="page-achu">
+  <div class="points-banner">
+    <div class="banner-left">
+      <div class="points-label">Today's Points</div>
+      <div class="banner-today">
+        <div class="points-value" id="k0-daily">0</div>
+        <div class="points-unit">pts</div>
+      </div>
+      <div class="banner-divider"></div>
+      <div class="alltime-label">⭐ All-Time Total</div>
+      <div class="alltime-row">
+        <div class="alltime-value" id="k0-alltime">0</div>
+        <div class="alltime-unit">pts</div>
+      </div>
+      <div class="banner-since" id="k0-since"></div>
+    </div>
+    <div class="banner-emoji">🦄</div>
+  </div>
+  <div class="auto-reset-note">🌅 Daily chores auto-reset every midnight</div>
+  <div class="week-card" id="k0-week"></div>
+  <div class="adjust-row">
+    <label>± Adjust:</label>
+    <input class="adjust-input" type="number" id="k0-adj" placeholder="+5 or -3">
+    <button class="adjust-btn" onclick="applyAdjust(0)">Apply</button>
+  </div>
+  <div class="section-label">📋 Today's Chores</div>
+  <div class="chore-grid" id="k0-chore-grid"></div>
+  <div class="section-label">⚡ Apply Penalty</div>
+  <div id="k0-penalty-list"></div>
+  <button class="reset-day-btn" onclick="resetDay(0)">🔄 Reset Today's Switches Manually</button>
+
+<!-- ══ PINKY PAGE (kid 1, pink/orange) ══ -->
+<div class="page pinky-page" id="page-pinky">
+  <div class="points-banner">
+    <div class="banner-left">
+      <div class="points-label">Today's Points</div>
+      <div class="banner-today">
+        <div class="points-value" id="k1-daily">0</div>
+        <div class="points-unit">pts</div>
+      </div>
+      <div class="banner-divider"></div>
+      <div class="alltime-label">⭐ All-Time Total</div>
+      <div class="alltime-row">
+        <div class="alltime-value" id="k1-alltime">0</div>
+        <div class="alltime-unit">pts</div>
+      </div>
+      <div class="banner-since" id="k1-since"></div>
+    </div>
+    <div class="banner-emoji">🌸</div>
+  </div>
+  <div class="auto-reset-note">🌅 Daily chores auto-reset every midnight</div>
+  <div class="week-card" id="k1-week"></div>
+  <div class="adjust-row">
+    <label>± Adjust:</label>
+    <input class="adjust-input" type="number" id="k1-adj" placeholder="+5 or -3">
+    <button class="adjust-btn" onclick="applyAdjust(1)">Apply</button>
+  </div>
+  <div class="section-label">📋 Today's Chores</div>
+  <div class="chore-grid" id="k1-chore-grid"></div>
+  <div class="section-label">⚡ Apply Penalty</div>
+  <div id="k1-penalty-list"></div>
+  <button class="reset-day-btn" onclick="resetDay(1)">🔄 Reset Today's Switches Manually</button>
+</div>
+
+<!-- ══ SETTINGS PAGE ══ -->
+<div class="page" id="page-settings">
+
+  <div class="settings-section">
+    <h3>👦 Kid Names</h3>
+    <div class="settings-row">
+      <span style="font-size:1.2rem">🦄</span>
+      <input class="settings-input" id="s-name0" placeholder="Kid 1 name">
+      <button class="btn-save" onclick="saveName(0)">Save</button>
+    </div>
+    <div class="settings-row">
+      <span style="font-size:1.2rem">🌸</span>
+      <input class="settings-input" id="s-name1" placeholder="Kid 2 name">
+      <button class="btn-save" onclick="saveName(1)">Save</button>
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <h3>🎯 Milestone Alert</h3>
+    <p style="font-size:0.82rem;color:#aaa;margin-bottom:10px;line-height:1.5">When a kid reaches <strong>500 pts</strong> all-time, a big celebration screen pops up! 🎉 You can change the milestone below.</p>
+    <div class="settings-row">
+      <label style="font-size:0.82rem;font-weight:700;color:#888;white-space:nowrap">🏆 Milestone pts:</label>
+      <input class="settings-input small" type="number" id="s-milestone" placeholder="500">
+      <button class="btn-save" onclick="saveMilestone()">Save</button>
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <h3>📋 Manage Chores</h3>
+    <div id="chore-edit-list"></div>
+    <div class="settings-row" style="margin-top:10px">
+      <input class="settings-input" id="new-chore-name" placeholder="New chore name">
+      <input class="settings-input small" id="new-chore-pts" type="number" placeholder="pts">
+      <button class="btn-add" onclick="addChore()">+ Add</button>
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <h3>⚡ Manage Penalties</h3>
+    <div id="penalty-edit-list"></div>
+    <div class="settings-row" style="margin-top:10px">
+      <input class="settings-input" id="new-penalty-name" placeholder="Penalty name">
+      <input class="settings-input small" id="new-penalty-pts" type="number" placeholder="-pts">
+      <button class="btn-add" onclick="addPenalty()" style="background:linear-gradient(135deg,#ff4d6d,#ff9a3c)">+ Add</button>
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <h3>🚨 Danger Zone</h3>
+    <button class="btn-danger" style="width:100%;padding:12px" onclick="confirmReset()">🗑️ Total Reset (Clears Everything)</button>
+  </div>
+</div>
+
+
+
+<!-- ── EDIT CHORE MODAL ── -->
+<div class="modal-overlay" id="modal-edit-chore">
+  <div class="modal-box">
+    <h3>✏️ Edit Chore</h3>
+    <input type="text"   id="edit-chore-name" placeholder="Chore name">
+    <input type="number" id="edit-chore-pts"  placeholder="Points">
+    <input type="hidden" id="edit-chore-idx">
+    <div class="modal-row">
+      <button class="modal-cancel"  onclick="closeModal('modal-edit-chore')">Cancel</button>
+      <button class="modal-confirm" onclick="saveEditChore()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── EDIT PENALTY MODAL ── -->
+<div class="modal-overlay" id="modal-edit-penalty">
+  <div class="modal-box">
+    <h3>✏️ Edit Penalty</h3>
+    <input type="text"   id="edit-penalty-name" placeholder="Penalty name">
+    <input type="number" id="edit-penalty-pts"  placeholder="Points (negative)">
+    <input type="hidden" id="edit-penalty-idx">
+    <div class="modal-row">
+      <button class="modal-cancel" onclick="closeModal('modal-edit-penalty')">Cancel</button>
+      <button class="modal-danger" onclick="saveEditPenalty()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── CONFIRM RESET MODAL ── -->
+<div class="modal-overlay" id="modal-confirm-reset">
+  <div class="modal-box">
+    <h3>🚨 Total Reset?</h3>
+    <p>This will erase ALL points, chores, and settings and restore defaults. This cannot be undone!</p>
+    <div class="modal-row">
+      <button class="modal-cancel" onclick="closeModal('modal-confirm-reset')">Cancel</button>
+      <button class="modal-danger" onclick="doReset()">Yes, Reset Everything</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── 500pt CELEBRATION MODAL ── -->
+<div class="modal-overlay celebrate-overlay" id="modal-celebrate">
+  <div class="celebrate-box" id="celebrate-box">
+    <div class="celebrate-stars">🌟⭐🌟</div>
+    <div class="celebrate-name" id="cel-name">Achu</div>
+    <div class="celebrate-msg">You reached the milestone!<br>Amazing work! 🎉</div>
+    <div class="celebrate-pts" id="cel-pts" style="color:#6c63ff">500</div>
+    <div class="celebrate-sub">All-Time Points!</div>
+    <button class="celebrate-btn" id="cel-btn" onclick="closeCelebrate()">🎊 Woohoo! Keep Going!</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ───────────────────────────────────────────
+// DEFAULT DATA
+// ───────────────────────────────────────────
+const DEFAULT_NAMES = ['Achu', 'Pinky'];
+const DEFAULT_MILESTONE = 500;
+const DEFAULT_CHORES = [
+  {name:'Make bed',pts:1},{name:'Help with dishes',pts:1},
+  {name:'Reading',pts:1},{name:'Writing',pts:1},{name:'Math',pts:1},
+  {name:'Essay writing',pts:1},{name:'Reading comprehension',pts:1},
+  {name:'Science',pts:1},{name:'Social studies',pts:1},
+  {name:'Exercise / Play outdoors',pts:3},
+  {name:'Tidy room',pts:1},{name:'Cleanup after eating',pts:1},
+  {name:'Clean living room & game room',pts:1},
+  {name:'Dance practice',pts:1},{name:'Piano practice',pts:1},
+];
+const DEFAULT_PENALTIES = [
+  {name:'Not eating vegetables/fruits',pts:-10},
+  {name:'Too much screen time',pts:-20},
+];
+const EMOJIS = ['🛏️','🍽️','📖','✏️','🔢','📝','📚','🔬','🌍','🏃','🧹','🍱','🛋️','💃','🎹','⭐','🌟','🎯','🎨','🏅'];
+// kid colours: 0=Achu(purple/teal), 1=Pinky(pink/orange)
+const KID_GRAD = [
+  'linear-gradient(135deg,#6c63ff,#43e8d8)',
+  'linear-gradient(135deg,#ff6b9d,#ff9a3c)',
+];
+const KID_COLOR = ['#6c63ff','#ff6b9d'];
+
+// ───────────────────────────────────────────
+// STATE
+// ───────────────────────────────────────────
+let state = {};
+
+function todayStr() { return new Date().toISOString().slice(0,10); }
+
+function freshKid() {
+  return { allTimePoints:0, dailyPoints:0, startDate:todayStr(), lastDate:todayStr(), done:{}, celebrated:[], history:{} };
+}
+
+function loadState() {
+  const saved = Store.get('achupinky_v3');
+  if (saved) {
+    state = JSON.parse(saved);
+    // migrations
+    if (!state.milestone) state.milestone = DEFAULT_MILESTONE;
+    state.kids.forEach(k => {
+      if (k.allTimePoints === undefined) k.allTimePoints = k.points || 0;
+      if (k.dailyPoints   === undefined) k.dailyPoints   = 0;
+      if (k.startDate     === undefined) k.startDate     = todayStr();
+      if (k.lastDate      === undefined) k.lastDate      = todayStr();
+      if (k.celebrated    === undefined) k.celebrated    = [];
+      if (k.history       === undefined) k.history       = {};
+    });
+  } else {
+    state = {
+      names: [...DEFAULT_NAMES],
+      milestone: DEFAULT_MILESTONE,
+      chores:    JSON.parse(JSON.stringify(DEFAULT_CHORES)),
+      penalties: JSON.parse(JSON.stringify(DEFAULT_PENALTIES)),
+      kids: [freshKid(), freshKid()],
+    };
+  }
+}
+
+// Safe storage wrapper — falls back to in-memory if localStorage blocked (e.g. Files preview on iPad)
+const Store = (() => {
+  let mem = {};
+  let useLS = true;
+  try { localStorage.setItem('_t','1'); localStorage.removeItem('_t'); } catch(e) { useLS = false; }
+  return {
+    get(k)    { try { return useLS ? localStorage.getItem(k) : (mem[k]||null); } catch(e) { return mem[k]||null; } },
+    set(k,v)  { try { if(useLS) localStorage.setItem(k,v); else mem[k]=v; } catch(e) { mem[k]=v; } },
+    remove(k) { try { if(useLS) localStorage.removeItem(k); else delete mem[k]; } catch(e) { delete mem[k]; } }
+  };
+})();
+
+function saveState() { Store.set('achupinky_v3', JSON.stringify(state)); }
+
+function saveHistory(kidIdx) {
+  // Record today's daily points into history keyed by date
+  const k = state.kids[kidIdx];
+  if (!k.history) k.history = {};
+  k.history[todayStr()] = k.dailyPoints;
+}
+
+// ───────────────────────────────────────────
+// AUTO DAILY RESET
+// ───────────────────────────────────────────
+function checkDailyReset() {
+  const today = todayStr();
+  let changed = false;
+  state.kids.forEach(k => {
+    if (k.lastDate !== today) {
+      // save yesterday's points to history before clearing
+      if (!k.history) k.history = {};
+      k.history[k.lastDate] = k.dailyPoints;
+      k.done = {};
+      k.dailyPoints = 0;
+      k.lastDate = today;
+      changed = true;
+    }
+  });
+  if (changed) { saveState(); showToast('🌅 New day — daily chores reset!'); }
+}
+
+// Also set a timer to fire at midnight
+function scheduleMidnightReset() {
+  const now = new Date();
+  const midnight = new Date(now);
+  midnight.setHours(24,0,5,0); // 5ms past midnight
+  const ms = midnight - now;
+  setTimeout(() => {
+    checkDailyReset();
+    renderKid(0); renderKid(1);
+    scheduleMidnightReset(); // reschedule for next midnight
+  }, ms);
+}
+
+// ───────────────────────────────────────────
+// PAGE SWITCHING
+// ───────────────────────────────────────────
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.getElementById('tab-' + id).classList.add('active');
+  if (id === 'settings') renderSettings();
+}
+
+// ───────────────────────────────────────────
+// WEEKLY CALENDAR
+// ───────────────────────────────────────────
+function renderWeek(kidIdx) {
+  const kid = state.kids[kidIdx];
+  const container = document.getElementById('k'+kidIdx+'-week');
+  const today = new Date();
+  const todayISO = todayStr();
+
+  // Find Monday of this week
+  const dow = today.getDay(); // 0=Sun
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - (dow === 0 ? 6 : dow - 1));
+
+  const DAY_NAMES = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+  let html = '<div class="week-title">📅 This Week</div><div class="week-row">';
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    const iso = d.toISOString().slice(0,10);
+    const isToday = iso === todayISO;
+    const pts = (kid.history && kid.history[iso]) ? kid.history[iso] : 0;
+    const hasPts = pts > 0;
+    const dayNum = d.getDate();
+    let cls = 'week-day';
+    if (isToday) cls += ' today';
+    else if (hasPts) cls += ' has-pts';
+    html += `<div class="${cls}">
+      <span class="wd-name">${DAY_NAMES[i]}</span>
+      <span class="wd-date">${dayNum}</span>
+      <span class="wd-pts">${pts > 0 ? pts : '—'}</span>
+    </div>`;
+  }
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+// ───────────────────────────────────────────
+// RENDER KID
+// ───────────────────────────────────────────
+function daysSince(d) {
+  const diff = Math.floor((new Date() - new Date(d)) / 86400000);
+  if (diff === 0) return '🌱 Started today';
+  if (diff === 1) return '📅 Since yesterday';
+  return `📅 ${diff} days of tracking`;
+}
+
+function renderKid(kidIdx) {
+  const kid = state.kids[kidIdx];
+  const pre = 'k' + kidIdx;
+  document.getElementById(pre+'-daily').textContent   = kid.dailyPoints;
+  document.getElementById(pre+'-alltime').textContent = kid.allTimePoints;
+  document.getElementById(pre+'-since').textContent   = daysSince(kid.startDate);
+  renderWeek(kidIdx);
+
+  // Chore grid
+  const grid = document.getElementById(pre+'-chore-grid');
+  grid.innerHTML = '';
+  state.chores.forEach((chore, i) => {
+    const done = !!kid.done[i];
+    const card = document.createElement('div');
+    card.className = 'chore-card cc'+(i%10)+(done?' done':'');
+    card.innerHTML = `
+      <span class="chore-icon">${EMOJIS[i%EMOJIS.length]}</span>
+      <div class="chore-info">
+        <div class="chore-name">${esc(chore.name)}</div>
+        <div class="chore-pts">${chore.pts>0?'+':''}${chore.pts} pts</div>
+      </div>
+      <label class="toggle-wrap" onclick="event.stopPropagation()">
+        <input type="checkbox" ${done?'checked':''} onchange="toggleChore(${kidIdx},${i},this.checked)">
+        <span class="toggle-slider"></span>
+      </label>`;
+    card.addEventListener('click', () => {
+      const cb = card.querySelector('input');
+      cb.checked = !cb.checked;
+      toggleChore(kidIdx, i, cb.checked);
+    });
+    grid.appendChild(card);
+  });
+
+  // Penalty list
+  const plist = document.getElementById(pre+'-penalty-list');
+  plist.innerHTML = '';
+  if (!state.penalties.length) {
+    plist.innerHTML = '<p style="color:#ccc;font-size:0.82rem;padding:6px 4px">No penalties yet — add in Settings.</p>';
+  }
+  state.penalties.forEach((pen, i) => {
+    const d = document.createElement('div');
+    d.className = 'penalty-card';
+    d.innerHTML = `
+      <span style="font-size:1.2rem">⚡</span>
+      <div style="flex:1">
+        <div class="penalty-name">${esc(pen.name)}</div>
+        <div class="penalty-pts">${pen.pts} pts</div>
+      </div>
+      <button class="penalty-btn" onclick="applyPenalty(${kidIdx},${i})">Apply</button>`;
+    plist.appendChild(d);
+  });
+}
+
+// ───────────────────────────────────────────
+// CHORE TOGGLE
+// ───────────────────────────────────────────
+function toggleChore(kidIdx, choreIdx, checked) {
+  const kid = state.kids[kidIdx];
+  const pts = state.chores[choreIdx].pts;
+  if (checked) {
+    kid.done[choreIdx] = true;
+    kid.allTimePoints += pts;
+    kid.dailyPoints   += pts;
+  } else {
+    delete kid.done[choreIdx];
+    kid.allTimePoints -= pts;
+    kid.dailyPoints   -= pts;
+  }
+  saveState();
+  saveHistory(kidIdx);
+  renderKid(kidIdx);
+  checkMilestone(kidIdx);
+}
+
+// ───────────────────────────────────────────
+// PENALTY
+// ───────────────────────────────────────────
+function applyPenalty(kidIdx, penIdx) {
+  const pen = state.penalties[penIdx];
+  state.kids[kidIdx].allTimePoints += pen.pts;
+  state.kids[kidIdx].dailyPoints   += pen.pts;
+  saveState();
+  saveHistory(kidIdx);
+  renderKid(kidIdx);
+  showToast('⚡ '+pen.name+' ('+pen.pts+' pts)');
+}
+
+// ───────────────────────────────────────────
+// MANUAL ADJUST
+// ───────────────────────────────────────────
+function applyAdjust(kidIdx) {
+  const el = document.getElementById('k'+kidIdx+'-adj');
+  const val = parseInt(el.value);
+  if (isNaN(val)) { showToast('Enter a number first!'); return; }
+  state.kids[kidIdx].allTimePoints += val;
+  state.kids[kidIdx].dailyPoints   += val;
+  saveState();
+  saveHistory(kidIdx);
+  renderKid(kidIdx);
+  el.value = '';
+  showToast((val>=0?'+':'')+val+' pts applied!');
+  checkMilestone(kidIdx);
+}
+
+// ───────────────────────────────────────────
+// DAILY RESET (manual)
+// ───────────────────────────────────────────
+function resetDay(kidIdx) {
+  state.kids[kidIdx].done = {};
+  state.kids[kidIdx].dailyPoints = 0;
+  state.kids[kidIdx].lastDate = todayStr();
+  if (!state.kids[kidIdx].history) state.kids[kidIdx].history = {};
+  state.kids[kidIdx].history[todayStr()] = 0;
+  saveState();
+  renderKid(kidIdx);
+  showToast("✅ Today's chores reset! All-time kept.");
+}
+
+// ───────────────────────────────────────────
+// MILESTONE / CELEBRATION
+// ───────────────────────────────────────────
+function checkMilestone(kidIdx) {
+  const kid = state.kids[kidIdx];
+  const ms = state.milestone || 500;
+  // find which milestone multiples have been crossed
+  const level = Math.floor(kid.allTimePoints / ms);
+  if (level > 0 && !(kid.celebrated || []).includes(level)) {
+    if (!kid.celebrated) kid.celebrated = [];
+    kid.celebrated.push(level);
+    saveState();
+    showCelebrate(kidIdx, kid.allTimePoints);
+  }
+}
+
+function showCelebrate(kidIdx, pts) {
+  const name = state.names[kidIdx];
+  document.getElementById('cel-name').textContent = name + '! 🎉';
+  document.getElementById('cel-pts').textContent  = pts;
+  document.getElementById('cel-pts').style.color  = KID_COLOR[kidIdx];
+  document.getElementById('cel-btn').style.background = KID_GRAD[kidIdx];
+  document.getElementById('celebrate-box').style.border = '4px solid '+KID_COLOR[kidIdx];
+  document.getElementById('modal-celebrate').classList.add('open');
+  launchConfetti();
+}
+
+function closeCelebrate() {
+  document.getElementById('modal-celebrate').classList.remove('open');
+  document.querySelectorAll('.confetti-piece').forEach(c => c.remove());
+}
+
+function launchConfetti() {
+  const colors = ['#ff6b9d','#6c63ff','#43e8d8','#ff9a3c','#f7c948','#5ee76a'];
+  for (let i = 0; i < 60; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    el.style.left = Math.random()*100+'vw';
+    el.style.background = colors[Math.floor(Math.random()*colors.length)];
+    el.style.width  = (8+Math.random()*8)+'px';
+    el.style.height = (8+Math.random()*8)+'px';
+    el.style.borderRadius = Math.random()>0.5?'50%':'2px';
+    el.style.animationDuration = (1.5+Math.random()*2)+'s';
+    el.style.animationDelay   = (Math.random()*0.8)+'s';
+    document.body.appendChild(el);
+    el.addEventListener('animationend', () => el.remove());
+  }
+}
+
+// ───────────────────────────────────────────
+// SETTINGS
+// ───────────────────────────────────────────
+function renderSettings() {
+  document.getElementById('s-name0').value = state.names[0];
+  document.getElementById('s-name1').value = state.names[1];
+  document.getElementById('s-milestone').value = state.milestone || 500;
+
+  // Chores
+  const cel = document.getElementById('chore-edit-list');
+  cel.innerHTML = '';
+  state.chores.forEach((c,i) => {
+    const d = document.createElement('div');
+    d.className = 'chore-edit-item';
+    d.innerHTML = `
+      <span class="chore-edit-name">${esc(c.name)}</span>
+      <span class="chore-edit-pts">${c.pts>0?'+':''}${c.pts}pts</span>
+      <button class="btn-icon" onclick="openEditChore(${i})">✏️</button>
+      <button class="btn-icon" onclick="deleteChore(${i})">🗑️</button>`;
+    cel.appendChild(d);
+  });
+
+  // Penalties
+  const pel = document.getElementById('penalty-edit-list');
+  pel.innerHTML = '';
+  state.penalties.forEach((p,i) => {
+    const d = document.createElement('div');
+    d.className = 'chore-edit-item';
+    d.innerHTML = `
+      <span class="chore-edit-name penalty-edit-name">${esc(p.name)}</span>
+      <span class="chore-edit-pts" style="color:#e57373">${p.pts}pts</span>
+      <button class="btn-icon" onclick="openEditPenalty(${i})">✏️</button>
+      <button class="btn-icon" onclick="deletePenalty(${i})">🗑️</button>`;
+    pel.appendChild(d);
+  });
+}
+
+function saveName(idx) {
+  const val = document.getElementById('s-name'+idx).value.trim();
+  if (!val) return;
+  state.names[idx] = val;
+  saveState(); updateNames();
+  showToast('✅ Name saved!');
+}
+
+function updateNames() {
+  document.getElementById('tab-achu-name').textContent  = state.names[0];
+  document.getElementById('tab-pinky-name').textContent = state.names[1];
+}
+
+function saveMilestone() {
+  const val = parseInt(document.getElementById('s-milestone').value);
+  if (isNaN(val) || val < 1) { showToast('Enter a valid number!'); return; }
+  state.milestone = val;
+  saveState();
+  showToast('✅ Milestone set to '+val+' pts!');
+}
+
+function addChore() {
+  const name = document.getElementById('new-chore-name').value.trim();
+  const pts  = parseInt(document.getElementById('new-chore-pts').value);
+  if (!name || isNaN(pts)) { showToast('Enter name and points!'); return; }
+  state.chores.push({name,pts});
+  saveState();
+  document.getElementById('new-chore-name').value = '';
+  document.getElementById('new-chore-pts').value  = '';
+  renderSettings(); renderKid(0); renderKid(1);
+  showToast('✅ Chore added!');
+}
+
+function deleteChore(i) {
+  if (!confirm('Delete "'+state.chores[i].name+'"?')) return;
+  state.chores.splice(i,1);
+  state.kids.forEach(k => { k.done={}; });
+  saveState(); renderSettings(); renderKid(0); renderKid(1);
+  showToast('🗑️ Chore deleted');
+}
+
+function openEditChore(i) {
+  document.getElementById('edit-chore-name').value = state.chores[i].name;
+  document.getElementById('edit-chore-pts').value  = state.chores[i].pts;
+  document.getElementById('edit-chore-idx').value  = i;
+  document.getElementById('modal-edit-chore').classList.add('open');
+}
+
+function saveEditChore() {
+  const i    = parseInt(document.getElementById('edit-chore-idx').value);
+  const name = document.getElementById('edit-chore-name').value.trim();
+  const pts  = parseInt(document.getElementById('edit-chore-pts').value);
+  if (!name||isNaN(pts)) { showToast('Enter name and points!'); return; }
+  state.chores[i] = {name,pts};
+  saveState(); closeModal('modal-edit-chore');
+  renderSettings(); renderKid(0); renderKid(1);
+  showToast('✅ Chore updated!');
+}
+
+function addPenalty() {
+  const name = document.getElementById('new-penalty-name').value.trim();
+  let pts    = parseInt(document.getElementById('new-penalty-pts').value);
+  if (!name||isNaN(pts)) { showToast('Enter name and points!'); return; }
+  if (pts>0) pts=-pts;
+  state.penalties.push({name,pts});
+  saveState();
+  document.getElementById('new-penalty-name').value='';
+  document.getElementById('new-penalty-pts').value='';
+  renderSettings(); renderKid(0); renderKid(1);
+  showToast('✅ Penalty added!');
+}
+
+function deletePenalty(i) {
+  if (!confirm('Delete "'+state.penalties[i].name+'"?')) return;
+  state.penalties.splice(i,1);
+  saveState(); renderSettings(); renderKid(0); renderKid(1);
+  showToast('🗑️ Penalty deleted');
+}
+
+function openEditPenalty(i) {
+  document.getElementById('edit-penalty-name').value = state.penalties[i].name;
+  document.getElementById('edit-penalty-pts').value  = state.penalties[i].pts;
+  document.getElementById('edit-penalty-idx').value  = i;
+  document.getElementById('modal-edit-penalty').classList.add('open');
+}
+
+function saveEditPenalty() {
+  const i    = parseInt(document.getElementById('edit-penalty-idx').value);
+  const name = document.getElementById('edit-penalty-name').value.trim();
+  let pts    = parseInt(document.getElementById('edit-penalty-pts').value);
+  if (!name||isNaN(pts)) { showToast('Enter name and points!'); return; }
+  if (pts>0) pts=-pts;
+  state.penalties[i] = {name,pts};
+  saveState(); closeModal('modal-edit-penalty');
+  renderSettings(); renderKid(0); renderKid(1);
+  showToast('✅ Penalty updated!');
+}
+
+function confirmReset() { document.getElementById('modal-confirm-reset').classList.add('open'); }
+
+function doReset() {
+  Store.remove('achupinky_v3');
+  loadState(); closeModal('modal-confirm-reset');
+  updateNames(); renderKid(0); renderKid(1);
+  showToast('✅ Everything reset!');
+}
+
+// ───────────────────────────────────────────
+// MODAL HELPERS
+// ───────────────────────────────────────────
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target===m && m.id!=='modal-celebrate') m.classList.remove('open'); });
+});
+
+// ───────────────────────────────────────────
+// TOAST
+// ───────────────────────────────────────────
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+// ───────────────────────────────────────────
+// UTILS
+// ───────────────────────────────────────────
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ───────────────────────────────────────────
+// INIT
+// ───────────────────────────────────────────
+loadState();
+checkDailyReset();
+scheduleMidnightReset();
+updateNames();
+renderKid(0);
+renderKid(1);
+</script>
+</body>
+</html>
